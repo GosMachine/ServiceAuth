@@ -25,7 +25,8 @@ func Login(req *authv1.LoginRequest) error {
 
 func Register(req *authv1.RegisterRequest) error {
 	validate := validator.New()
-	err := validate.Struct(User{Email: req.GetEmail()})
+	fmt.Println(req.GetEmail())
+	err := validate.Struct(User{Email: req.GetEmail(), Password: req.GetEmail()})
 	if err != nil {
 		return fmt.Errorf("invalid email")
 	}

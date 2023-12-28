@@ -122,3 +122,20 @@ func (a *Auth) IsAdmin(userID int64) (bool, error) {
 
 	return isAdmin, nil
 }
+
+func (a *Auth) IsUserLoggedIn(token string) bool {
+	const op = "Auth.IsUserLoggedIn"
+
+	log := a.log.With(
+		zap.String("op", op),
+		zap.String("token", token),
+	)
+
+	log.Info("checking IsUserLoggedIn")
+
+	isUserLoggedIn := jwt.IsTokenValid(token)
+
+	log.Info("checked IsUserLoggedIn", zap.Bool("is_user_logged_in", isUserLoggedIn))
+
+	return isUserLoggedIn
+}

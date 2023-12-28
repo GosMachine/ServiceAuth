@@ -16,6 +16,7 @@ type Auth interface {
 	Login(email, password string) (token string, err error)
 	RegisterNewUser(email, password string) (userID int64, err error)
 	IsAdmin(userID int64) (bool, error)
+	IsUserLoggedIn(token string) bool
 }
 
 type serverAPI struct {
@@ -68,4 +69,9 @@ func (s *serverAPI) IsAdmin(_ context.Context, req *authv1.IsAdminRequest) (*aut
 		return nil, status.Error(codes.Internal, "failed to check admin status")
 	}
 	return &authv1.IsAdminResponse{IsAdmin: isAdmin}, nil
+}
+
+func (s *serverAPI) IsUserLoggedIn(_ context.Context, req *authv1.IsUserLoggedInRequest) (*authv1.IsUserLoggedInResponse, error) {
+	IsUserLoggedIn := s.auth.IsUserLoggedIn(req.GetToken())
+	return &authv1.IsUserLoggedInResponse{IsUserLoggedIn: IsUserLoggedIn}, nil
 }

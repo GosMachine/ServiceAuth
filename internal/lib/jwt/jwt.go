@@ -20,3 +20,13 @@ func NewToken(user models.User, duration time.Duration) (string, error) {
 	}
 	return tokenString, nil
 }
+
+func IsTokenValid(token string) bool {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("SECRET")), nil
+	})
+	if err != nil {
+		return false
+	}
+	return true
+}
