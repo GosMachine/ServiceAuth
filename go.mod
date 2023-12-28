@@ -3,12 +3,12 @@ module ServiceAuth
 go 1.21
 
 require (
-	github.com/GosMachine/protos v0.0.0-20231226113119-fd5d35be703e
+	github.com/GosMachine/protos v0.0.0-20231228083140-0761ff58907f
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	google.golang.org/grpc v1.60.1
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
