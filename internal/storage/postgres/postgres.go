@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Storage struct {
@@ -13,7 +14,7 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
-	connection := "user=postgres password=postgres dbname=AuthDB host=127.0.0.1 sslmode=disable"
+	connection := "user=postgres password=postgres dbname=FiberShop host=127.0.0.1 sslmode=disable"
 	database, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -25,13 +26,13 @@ func New() (*Storage, error) {
 	return &Storage{db: database}, nil
 }
 
-func (s *Storage) SaveUser(email string, passHash []byte) (int64, error) {
+func (s *Storage) SaveUser(email, ip string, passHash []byte) (models.User, error) {
 	const op = "storage.postgres.SaveUser"
-	user := models.User{Email: email, PassHash: passHash}
+	user := models.User{Email: email, PassHash: passHash, IpCreated: ip, LastLoginIp: ip, LastLoginDate: time.Now()}
 	if err := s.db.Create(&user).Error; err != nil {
-		return 0, fmt.Errorf("%s: %w", op, storage.ErrUserExists)
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
-	return user.ID, nil
+	return user, nil
 }
 
 func (s *Storage) User(email string) (models.User, error) {
@@ -52,4 +53,12 @@ func (s *Storage) IsAdmin(userID int64) (bool, error) {
 		return false, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
 	}
 	return user.IsAdmin, nil
+}
+
+func (s *Storage) UpdateUser(user models.User) error {
+	result := s.db.Save(&user)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }

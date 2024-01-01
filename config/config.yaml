@@ -1,5 +1,5 @@
 env: "local"
-token_ttl: 168h
+token_ttl: 24h
 grpc:
   port: 44044
-  timeout: 5s
+  timeout: 3s

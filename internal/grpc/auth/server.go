@@ -13,10 +13,10 @@ import (
 )
 
 type Auth interface {
-	Login(email, password string) (token string, err error)
-	RegisterNewUser(email, password string) (userID int64, err error)
+	Login(email, password, ip, rememberMe string) (token string, err error)
+	RegisterNewUser(email, password, ip, rememberMe string) (token string, err error)
 	IsAdmin(userID int64) (bool, error)
-	IsUserLoggedIn(token string) bool
+	IsUserLoggedIn(token string) (bool, string)
 }
 
 type serverAPI struct {
@@ -32,7 +32,7 @@ func (s *serverAPI) Login(_ context.Context, req *authv1.LoginRequest) (*authv1.
 	if err := validate.Login(req); err != nil {
 		return nil, err
 	}
-	token, err := s.auth.Login(req.GetEmail(), req.GetPassword())
+	token, err := s.auth.Login(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
@@ -46,7 +46,7 @@ func (s *serverAPI) Register(_ context.Context, req *authv1.RegisterRequest) (*a
 	if err := validate.Register(req); err != nil {
 		return nil, err
 	}
-	userID, err := s.auth.RegisterNewUser(req.GetEmail(), req.GetPassword())
+	token, err := s.auth.RegisterNewUser(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
@@ -54,7 +54,7 @@ func (s *serverAPI) Register(_ context.Context, req *authv1.RegisterRequest) (*a
 
 		return nil, status.Error(codes.Internal, "failed to register user")
 	}
-	return &authv1.RegisterResponse{UserId: userID}, nil
+	return &authv1.RegisterResponse{Token: token}, nil
 }
 func (s *serverAPI) IsAdmin(_ context.Context, req *authv1.IsAdminRequest) (*authv1.IsAdminResponse, error) {
 	if err := validate.IsAdmin(req); err != nil {
@@ -72,6 +72,6 @@ func (s *serverAPI) IsAdmin(_ context.Context, req *authv1.IsAdminRequest) (*aut
 }
 
 func (s *serverAPI) IsUserLoggedIn(_ context.Context, req *authv1.IsUserLoggedInRequest) (*authv1.IsUserLoggedInResponse, error) {
-	IsUserLoggedIn := s.auth.IsUserLoggedIn(req.GetToken())
-	return &authv1.IsUserLoggedInResponse{IsUserLoggedIn: IsUserLoggedIn}, nil
+	IsUserLoggedIn, token := s.auth.IsUserLoggedIn(req.GetToken())
+	return &authv1.IsUserLoggedInResponse{IsUserLoggedIn: IsUserLoggedIn, Token: token}, nil
 }

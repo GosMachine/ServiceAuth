@@ -3,6 +3,7 @@ package auth
 import (
 	"ServiceAuth/internal/domain/models"
 	"ServiceAuth/internal/lib/jwt"
+	"ServiceAuth/internal/storage"
 	"ServiceAuth/internal/storage/postgres"
 	"errors"
 	"fmt"
@@ -22,9 +23,10 @@ type Auth struct {
 }
 
 type Storage interface {
-	SaveUser(email string, passHash []byte) (uid int64, err error)
+	SaveUser(email, ip string, passHash []byte) (user models.User, err error)
 	User(email string) (models.User, error)
 	IsAdmin(userID int64) (bool, error)
+	UpdateUser(user models.User) error
 }
 
 func New(log *zap.Logger,
@@ -39,12 +41,13 @@ func New(log *zap.Logger,
 	}
 }
 
-func (a *Auth) Login(email string, password string) (string, error) {
+func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 	const op = "Auth.Login"
 
 	log := a.log.With(
 		zap.String("op", op),
-		zap.String("username", email),
+		zap.String("email", email),
+		zap.String("ip", ip),
 	)
 
 	log.Info("attempting to login user")
@@ -55,51 +58,65 @@ func (a *Auth) Login(email string, password string) (string, error) {
 
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
-
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("invalid credentials", zap.Error(err))
-
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
-
-	log.Info("user logged in successfully")
-
-	token, err := jwt.NewToken(user, a.tokenTTL)
+	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
 	if err != nil {
 		a.log.Error("failed to generate token", zap.Error(err))
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
+	go func(user models.User, ip string) {
+		user.LastLoginDate = time.Now()
+		user.LastLoginIp = ip
+		err = a.db.UpdateUser(user)
+		if err != nil {
+			a.log.Error("failed to update user", zap.Error(err))
+		}
+		log.Info("user logged in successfully")
+	}(user, ip)
 
 	return token, nil
 }
 
 // RegisterNewUser registers new user in the system and returns user ID.
 // If user with given username already exists, returns error.
-func (a *Auth) RegisterNewUser(email string, pass string) (int64, error) {
+func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, error) {
 	const op = "Auth.RegisterNewUser"
 
 	log := a.log.With(
 		zap.String("op", op),
 		zap.String("email", email),
+		zap.String("ip", ip),
 	)
 
 	log.Info("registering user")
-	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
-	if err != nil {
-		log.Error("failed to generate password hash", zap.Error(err))
+	_, err := a.db.User(email)
+	if err == nil {
+		a.log.Error("failed to register user", zap.Error(err))
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, storage.ErrUserExists)
 	}
-
-	id, err := a.db.SaveUser(email, passHash)
+	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
 	if err != nil {
-		log.Error("failed to save user", zap.Error(err))
+		a.log.Error("failed to generate token", zap.Error(err))
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
-
-	return id, nil
+	go func(pass, email, ip string) {
+		passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
+		if err != nil {
+			log.Error("failed to generate password hash", zap.Error(err))
+		}
+		_, err = a.db.SaveUser(email, ip, passHash)
+		if err != nil {
+			log.Error("failed to save user", zap.Error(err))
+		}
+		log.Info("user register successfully")
+	}(pass, email, ip)
+	return token, nil
 }
 
 // IsAdmin checks if user is admin.
@@ -123,7 +140,7 @@ func (a *Auth) IsAdmin(userID int64) (bool, error) {
 	return isAdmin, nil
 }
 
-func (a *Auth) IsUserLoggedIn(token string) bool {
+func (a *Auth) IsUserLoggedIn(token string) (bool, string) {
 	const op = "Auth.IsUserLoggedIn"
 
 	log := a.log.With(
@@ -133,9 +150,13 @@ func (a *Auth) IsUserLoggedIn(token string) bool {
 
 	log.Info("checking IsUserLoggedIn")
 
-	isUserLoggedIn := jwt.IsTokenValid(token)
+	isUserLoggedIn, tokenData := jwt.IsTokenValid(token)
+	token, err := jwt.UpdateToken(tokenData)
+	if err != nil {
+		log.Error("fail to update token", zap.Error(err))
+	}
 
 	log.Info("checked IsUserLoggedIn", zap.Bool("is_user_logged_in", isUserLoggedIn))
 
-	return isUserLoggedIn
+	return isUserLoggedIn, token
 }
