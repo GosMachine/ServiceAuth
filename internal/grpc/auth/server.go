@@ -15,8 +15,7 @@ import (
 type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
 	RegisterNewUser(email, password, ip, rememberMe string) (token string, err error)
-	IsAdmin(userID int64) (bool, error)
-	IsUserLoggedIn(token string) (bool, string)
+	User(email string) *auth.User
 }
 
 type serverAPI struct {
@@ -56,22 +55,8 @@ func (s *serverAPI) Register(_ context.Context, req *authv1.RegisterRequest) (*a
 	}
 	return &authv1.RegisterResponse{Token: token}, nil
 }
-func (s *serverAPI) IsAdmin(_ context.Context, req *authv1.IsAdminRequest) (*authv1.IsAdminResponse, error) {
-	if err := validate.IsAdmin(req); err != nil {
-		return nil, err
-	}
-	isAdmin, err := s.auth.IsAdmin(req.GetUserId())
-	if err != nil {
-		if errors.Is(err, storage.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user not found")
-		}
 
-		return nil, status.Error(codes.Internal, "failed to check admin status")
-	}
-	return &authv1.IsAdminResponse{IsAdmin: isAdmin}, nil
-}
-
-func (s *serverAPI) IsUserLoggedIn(_ context.Context, req *authv1.IsUserLoggedInRequest) (*authv1.IsUserLoggedInResponse, error) {
-	IsUserLoggedIn, token := s.auth.IsUserLoggedIn(req.GetToken())
-	return &authv1.IsUserLoggedInResponse{IsUserLoggedIn: IsUserLoggedIn, Token: token}, nil
+func (s *serverAPI) User(_ context.Context, req *authv1.UserRequest) (*authv1.UserResponse, error) {
+	user := s.auth.User(req.GetEmail())
+	return &authv1.UserResponse{Balance: user.Balance, IsAdmin: user.IsAdmin}, nil
 }

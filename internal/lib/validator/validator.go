@@ -4,8 +4,6 @@ import (
 	"fmt"
 	authv1 "github.com/GosMachine/protos/gen/go/auth"
 	"github.com/go-playground/validator/v10"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"regexp"
 )
 
@@ -31,13 +29,6 @@ func Register(req *authv1.RegisterRequest) error {
 	}
 	if !validPassword(req.GetPassword()) {
 		return fmt.Errorf("invalid password")
-	}
-	return nil
-}
-
-func IsAdmin(req *authv1.IsAdminRequest) error {
-	if req.GetUserId() == 0 {
-		return status.Error(codes.InvalidArgument, "user_id is required")
 	}
 	return nil
 }

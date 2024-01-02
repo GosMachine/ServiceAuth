@@ -2,9 +2,9 @@ package auth
 
 import (
 	"ServiceAuth/internal/domain/models"
-	"ServiceAuth/internal/lib/jwt"
 	"ServiceAuth/internal/storage"
 	"ServiceAuth/internal/storage/postgres"
+	"ServiceAuth/pkg/jwt"
 	"errors"
 	"fmt"
 	"go.uber.org/zap"
@@ -25,7 +25,6 @@ type Auth struct {
 type Storage interface {
 	SaveUser(email, ip string, passHash []byte) (user models.User, err error)
 	User(email string) (models.User, error)
-	IsAdmin(userID int64) (bool, error)
 	UpdateUser(user models.User) error
 }
 
@@ -119,44 +118,26 @@ func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, erro
 	return token, nil
 }
 
-// IsAdmin checks if user is admin.
-func (a *Auth) IsAdmin(userID int64) (bool, error) {
-	const op = "Auth.IsAdmin"
-
-	log := a.log.With(
-		zap.String("op", op),
-		zap.Int64("user_id", userID),
-	)
-
-	log.Info("checking if user is admin")
-
-	isAdmin, err := a.db.IsAdmin(userID)
-	if err != nil {
-		return false, fmt.Errorf("%s: %w", op, err)
-	}
-
-	log.Info("checked if user is admin", zap.Bool("is_admin", isAdmin))
-
-	return isAdmin, nil
+type User struct {
+	Balance float64
+	IsAdmin bool
 }
 
-func (a *Auth) IsUserLoggedIn(token string) (bool, string) {
-	const op = "Auth.IsUserLoggedIn"
+func (a *Auth) User(email string) *User {
+	const op = "Auth.User"
 
 	log := a.log.With(
 		zap.String("op", op),
-		zap.String("token", token),
+		zap.String("email", email),
 	)
 
-	log.Info("checking IsUserLoggedIn")
+	log.Info("Getting user")
 
-	isUserLoggedIn, tokenData := jwt.IsTokenValid(token)
-	token, err := jwt.UpdateToken(tokenData)
+	user, err := a.db.User(email)
 	if err != nil {
-		log.Error("fail to update token", zap.Error(err))
+		a.log.Error("error getting user")
+		return nil
 	}
 
-	log.Info("checked IsUserLoggedIn", zap.Bool("is_user_logged_in", isUserLoggedIn))
-
-	return isUserLoggedIn, token
+	return &User{Balance: user.Balance, IsAdmin: user.IsAdmin}
 }

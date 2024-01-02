@@ -13,6 +13,10 @@ github.com/GosMachine/protos v0.2.3 h1:8qsKgxBC/POMwujhG4UoaQQLr59w0LGvmhNP2m1Ux
 github.com/GosMachine/protos v0.2.3/go.mod h1:MUlACep3mRJoR8SNrySfuChSd9O2tSvGY8+OX/KLCc0=
 github.com/GosMachine/protos v0.2.4 h1:pug69Qr2zbHttJlxG9Nrb02xNYDMHBHuaZR/uaqdyAc=
 github.com/GosMachine/protos v0.2.4/go.mod h1:MUlACep3mRJoR8SNrySfuChSd9O2tSvGY8+OX/KLCc0=
+github.com/GosMachine/protos v0.2.5 h1:8NDV1DQWlIr+gRryxR90yGIh+Q2P4hIJRe3cDJQPtTw=
+github.com/GosMachine/protos v0.2.5/go.mod h1:MUlACep3mRJoR8SNrySfuChSd9O2tSvGY8+OX/KLCc0=
+github.com/GosMachine/protos v0.2.6 h1:jxDl0u88HairznSdISVp76V9imhaud5Yay1wGpsEL8Y=
+github.com/GosMachine/protos v0.2.6/go.mod h1:MUlACep3mRJoR8SNrySfuChSd9O2tSvGY8+OX/KLCc0=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

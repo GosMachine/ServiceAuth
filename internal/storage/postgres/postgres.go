@@ -14,7 +14,7 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
-	connection := "user=postgres password=postgres dbname=FiberShop host=127.0.0.1 sslmode=disable"
+	connection := "user=FiberShop password=FiberShop dbname=FiberShop host=127.0.0.1 sslmode=disable"
 	database, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -43,16 +43,6 @@ func (s *Storage) User(email string) (models.User, error) {
 		return models.User{}, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
 	}
 	return user, nil
-}
-
-func (s *Storage) IsAdmin(userID int64) (bool, error) {
-	const op = "storage.postgres.IsAdmin"
-
-	var user models.User
-	if err := s.db.Where("id = ?", userID).First(&user).Error; err != nil {
-		return false, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
-	}
-	return user.IsAdmin, nil
 }
 
 func (s *Storage) UpdateUser(user models.User) error {
