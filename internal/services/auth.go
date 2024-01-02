@@ -76,7 +76,6 @@ func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 		}
 		log.Info("user logged in successfully")
 	}(user, ip)
-
 	return token, nil
 }
 
@@ -116,28 +115,4 @@ func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, erro
 		log.Info("user register successfully")
 	}(pass, email, ip)
 	return token, nil
-}
-
-type User struct {
-	Balance float64
-	IsAdmin bool
-}
-
-func (a *Auth) User(email string) *User {
-	const op = "Auth.User"
-
-	log := a.log.With(
-		zap.String("op", op),
-		zap.String("email", email),
-	)
-
-	log.Info("Getting user")
-
-	user, err := a.db.User(email)
-	if err != nil {
-		a.log.Error("error getting user")
-		return nil
-	}
-
-	return &User{Balance: user.Balance, IsAdmin: user.IsAdmin}
 }

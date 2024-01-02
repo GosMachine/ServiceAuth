@@ -15,7 +15,6 @@ import (
 type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
 	RegisterNewUser(email, password, ip, rememberMe string) (token string, err error)
-	User(email string) *auth.User
 }
 
 type serverAPI struct {
@@ -54,9 +53,4 @@ func (s *serverAPI) Register(_ context.Context, req *authv1.RegisterRequest) (*a
 		return nil, status.Error(codes.Internal, "failed to register user")
 	}
 	return &authv1.RegisterResponse{Token: token}, nil
-}
-
-func (s *serverAPI) User(_ context.Context, req *authv1.UserRequest) (*authv1.UserResponse, error) {
-	user := s.auth.User(req.GetEmail())
-	return &authv1.UserResponse{Balance: user.Balance, IsAdmin: user.IsAdmin}, nil
 }
