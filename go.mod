@@ -1,4 +1,4 @@
-module ServiceAuth
+module github.com/GosMachine/ServiceAuth
 
 go 1.21
 
