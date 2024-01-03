@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"ServiceAuth/internal/domain/models"
-	"ServiceAuth/internal/storage"
-	"ServiceAuth/internal/storage/postgres"
-	"ServiceAuth/pkg/jwt"
 	"errors"
 	"fmt"
+	"github.com/GosMachine/ServiceAuth/internal/domain/models"
+	"github.com/GosMachine/ServiceAuth/internal/storage"
+	"github.com/GosMachine/ServiceAuth/internal/storage/postgres"
+	"github.com/GosMachine/ServiceAuth/pkg/jwt"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"time"

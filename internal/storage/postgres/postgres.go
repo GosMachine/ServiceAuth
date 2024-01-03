@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	"ServiceAuth/internal/domain/models"
-	"ServiceAuth/internal/storage"
 	"fmt"
+	"github.com/GosMachine/ServiceAuth/internal/domain/models"
+	"github.com/GosMachine/ServiceAuth/internal/storage"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"time"

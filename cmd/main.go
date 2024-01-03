@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ServiceAuth/internal/app"
-	"ServiceAuth/internal/config"
+	"github.com/GosMachine/ServiceAuth/internal/app"
+	"github.com/GosMachine/ServiceAuth/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"

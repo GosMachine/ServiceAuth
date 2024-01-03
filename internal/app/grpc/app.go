@@ -1,8 +1,8 @@
 package grpcapp
 
 import (
-	grpcauth "ServiceAuth/internal/grpc/auth"
 	"fmt"
+	grpcauth "github.com/GosMachine/ServiceAuth/internal/grpc/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"net"

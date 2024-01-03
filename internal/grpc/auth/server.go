@@ -1,11 +1,11 @@
 package grpcauth
 
 import (
-	"ServiceAuth/internal/lib/validator"
-	auth "ServiceAuth/internal/services"
-	"ServiceAuth/internal/storage"
 	"context"
 	"errors"
+	"github.com/GosMachine/ServiceAuth/internal/lib/validator"
+	auth "github.com/GosMachine/ServiceAuth/internal/services"
+	"github.com/GosMachine/ServiceAuth/internal/storage"
 	authv1 "github.com/GosMachine/protos/gen/go/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

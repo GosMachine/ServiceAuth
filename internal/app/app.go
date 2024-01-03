@@ -1,9 +1,9 @@
 package app
 
 import (
-	grpcapp "ServiceAuth/internal/app/grpc"
-	auth "ServiceAuth/internal/services"
-	"ServiceAuth/internal/storage/postgres"
+	grpcapp "github.com/GosMachine/ServiceAuth/internal/app/grpc"
+	auth "github.com/GosMachine/ServiceAuth/internal/services"
+	"github.com/GosMachine/ServiceAuth/internal/storage/postgres"
 	"go.uber.org/zap"
 	"time"
 )
