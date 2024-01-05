@@ -28,7 +28,7 @@ func RegisterAuthServer(gRPC *grpc.Server, auth Auth) {
 
 func (s *serverAPI) Login(_ context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
 	if err := validate.Login(req); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
 	token, err := s.auth.Login(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
 	if err != nil {
@@ -42,7 +42,7 @@ func (s *serverAPI) Login(_ context.Context, req *authv1.LoginRequest) (*authv1.
 
 func (s *serverAPI) Register(_ context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
 	if err := validate.Register(req); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
 	token, err := s.auth.RegisterNewUser(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
 	if err != nil {
