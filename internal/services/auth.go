@@ -40,6 +40,43 @@ func New(log *zap.Logger,
 	}
 }
 
+func (a *Auth) OAuth(email, ip string) (string, error) {
+	const op = "Auth.OAuth"
+
+	log := a.log.With(
+		zap.String("op", op),
+		zap.String("email", email),
+		zap.String("ip", ip),
+	)
+
+	log.Info("attempting to OAuth")
+	token, err := jwt.NewToken(email, "on", a.tokenTTL)
+	if err != nil {
+		a.log.Error("failed to generate token", zap.Error(err))
+
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+	go func(email, ip string) {
+		user, err := a.db.User(email)
+		if err != nil {
+			_, err = a.db.SaveUser(email, ip, []byte{})
+			if err != nil {
+				log.Error("failed to save user", zap.Error(err))
+			}
+			log.Info("OAuth successfully")
+		} else {
+			user.LastLoginDate = time.Now()
+			user.LastLoginIp = ip
+			err = a.db.UpdateUser(user)
+			if err != nil {
+				a.log.Error("failed to update user", zap.Error(err))
+			}
+			log.Info("OAuth successfully")
+		}
+	}(email, ip)
+	return token, nil
+}
+
 func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 	const op = "Auth.Login"
 

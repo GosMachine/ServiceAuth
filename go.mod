@@ -3,7 +3,7 @@ module github.com/GosMachine/ServiceAuth
 go 1.21
 
 require (
-	github.com/GosMachine/protos v0.2.7
+	github.com/GosMachine/protos v0.2.10
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0

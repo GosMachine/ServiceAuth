@@ -14,6 +14,7 @@ import (
 
 type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
+	OAuth(email, ip string) (token string, err error)
 	RegisterNewUser(email, password, ip, rememberMe string) (token string, err error)
 }
 
@@ -27,15 +28,26 @@ func RegisterAuthServer(gRPC *grpc.Server, auth Auth) {
 }
 
 func (s *serverAPI) Login(_ context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
-	if err := validate.Login(req); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
-	}
-	token, err := s.auth.Login(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
-	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) {
+	var (
+		token string
+		err   error
+	)
+	if req.GetAuthMethod() != "default" {
+		token, err = s.auth.OAuth(req.GetEmail(), req.GetIP())
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to OAuth")
+		}
+	} else {
+		if err := validate.Login(req); err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 		}
-		return nil, status.Error(codes.Internal, "failed to login")
+		token, err = s.auth.Login(req.GetEmail(), req.GetPassword(), req.GetIP(), req.GetRememberMe())
+		if err != nil {
+			if errors.Is(err, auth.ErrInvalidCredentials) {
+				return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+			}
+			return nil, status.Error(codes.Internal, "failed to login")
+		}
 	}
 	return &authv1.LoginResponse{Token: token}, nil
 }

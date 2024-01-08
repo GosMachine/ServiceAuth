@@ -8,22 +8,24 @@ import (
 )
 
 type User struct {
-	Email    string `validate:"required,email"`
-	Password string `validate:"required"`
+	Email string `validate:"required,email"`
 }
 
 func Login(req *authv1.LoginRequest) error {
 	validate := validator.New()
-	err := validate.Struct(User{Email: req.GetEmail(), Password: req.GetPassword()})
+	err := validate.Struct(User{Email: req.GetEmail()})
 	if err != nil {
-		return fmt.Errorf("invalid email or password")
+		return fmt.Errorf("invalid email")
+	}
+	if !validPassword(req.GetPassword()) {
+		return fmt.Errorf("invalid password")
 	}
 	return nil
 }
 
 func Register(req *authv1.RegisterRequest) error {
 	validate := validator.New()
-	err := validate.Struct(User{Email: req.GetEmail(), Password: req.GetEmail()})
+	err := validate.Struct(User{Email: req.GetEmail()})
 	if err != nil {
 		return fmt.Errorf("invalid email")
 	}
