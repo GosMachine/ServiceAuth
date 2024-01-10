@@ -26,13 +26,13 @@ func New() (*Storage, error) {
 	return &Storage{db: database}, nil
 }
 
-func (s *Storage) SaveUser(email, ip string, passHash []byte, emailVerified bool) (models.User, error) {
+func (s *Storage) SaveUser(email, ip string, passHash []byte, emailVerified bool) error {
 	const op = "storage.postgres.SaveUser"
 	user := models.User{Email: email, PassHash: passHash, IpCreated: ip, LastLoginIp: ip, LastLoginDate: time.Now(), EmailVerified: emailVerified}
 	if err := s.db.Create(&user).Error; err != nil {
-		return models.User{}, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
-	return user, nil
+	return nil
 }
 
 func (s *Storage) User(email string) (models.User, error) {

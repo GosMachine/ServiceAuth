@@ -23,7 +23,7 @@ type Auth struct {
 }
 
 type Storage interface {
-	SaveUser(email, ip string, passHash []byte, emailVerified bool) (user models.User, err error)
+	SaveUser(email, ip string, passHash []byte, emailVerified bool) error
 	User(email string) (models.User, error)
 	UpdateUser(user models.User) error
 }
@@ -59,7 +59,7 @@ func (a *Auth) OAuth(email, ip string) (string, error) {
 	go func(email, ip string) {
 		user, err := a.db.User(email)
 		if err != nil {
-			_, err = a.db.SaveUser(email, ip, []byte{}, true)
+			err = a.db.SaveUser(email, ip, []byte{}, true)
 			if err != nil {
 				log.Error("failed to save user", zap.Error(err))
 			}
@@ -146,7 +146,7 @@ func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, erro
 		if err != nil {
 			log.Error("failed to generate password hash", zap.Error(err))
 		}
-		_, err = a.db.SaveUser(email, ip, passHash, false)
+		err = a.db.SaveUser(email, ip, passHash, false)
 		if err != nil {
 			log.Error("failed to save user", zap.Error(err))
 		}
