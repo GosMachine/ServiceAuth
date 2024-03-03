@@ -13,6 +13,7 @@ type App struct {
 }
 
 func New(log *zap.Logger, grpcPort int, tokenTTL time.Duration) *App {
+
 	db, err := postgres.New()
 	if err != nil {
 		panic(err)
