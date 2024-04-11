@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/GosMachine/ServiceAuth/internal/domain/models"
 	"github.com/GosMachine/ServiceAuth/internal/storage"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Storage struct {
@@ -14,7 +16,7 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
-	connection := "user=postgres password=postgres dbname=FiberShop host=127.0.0.1 sslmode=disable"
+	connection := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB"))
 	database, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
 	if err != nil {
 		return nil, err
