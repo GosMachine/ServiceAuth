@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	storage "github.com/GosMachine/ServiceAuth/internal/database"
 	"github.com/GosMachine/ServiceAuth/internal/database/postgres"
 	"github.com/GosMachine/ServiceAuth/internal/models"
 	"github.com/GosMachine/ServiceAuth/internal/pkg/jwt"
@@ -44,12 +43,6 @@ func (a *Auth) OAuth(email, ip string) (string, error) {
 	)
 	log.Info("attempting to OAuth")
 
-	token, err := jwt.NewToken(email, "on", a.tokenTTL)
-	if err != nil {
-		log.Error("failed to generate token", zap.Error(err))
-		return "", err
-	}
-
 	user, err := a.db.User(email)
 	if err != nil {
 		err = a.db.CreateUser(email, ip, []byte{}, true)
@@ -59,10 +52,16 @@ func (a *Auth) OAuth(email, ip string) (string, error) {
 		}
 	} else {
 		user.EmailVerified = true
-		if err = a.updateUser(user, token); err != nil {
+		if err = a.updateUser(user, ip); err != nil {
 			log.Error("failed to update user", zap.Error(err))
 			return "", err
 		}
+	}
+
+	token, err := jwt.NewToken(email, "on", a.tokenTTL)
+	if err != nil {
+		log.Error("failed to generate token", zap.Error(err))
+		return "", err
 	}
 
 	log.Info("OAuth successfully")
@@ -85,13 +84,13 @@ func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 		log.Info("passwords do not match", zap.Error(err))
 		return "", ErrInvalidCredentials
 	}
+	if err = a.updateUser(user, ip); err != nil {
+		log.Error("failed to update user", zap.Error(err))
+		return "", err
+	}
 	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
 	if err != nil {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", err
-	}
-	if err = a.updateUser(user, token); err != nil {
-		log.Error("failed to update user", zap.Error(err))
 		return "", err
 	}
 	log.Info("user logged in successfully")
@@ -105,16 +104,6 @@ func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 	)
 	log.Info("registering user")
 
-	_, err := a.db.User(email)
-	if err == nil {
-		log.Error("user already exists", zap.Error(err))
-		return "", storage.ErrUserExists
-	}
-	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
-	if err != nil {
-		log.Error("failed to generate token", zap.Error(err))
-		return "", err
-	}
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
 	if err != nil {
 		log.Error("failed to generate password hash", zap.Error(err))
@@ -123,6 +112,11 @@ func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 	err = a.db.CreateUser(email, ip, passHash, false)
 	if err != nil {
 		log.Error("failed to create user", zap.Error(err))
+		return "", err
+	}
+	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
+	if err != nil {
+		log.Error("failed to generate token", zap.Error(err))
 		return "", err
 	}
 
