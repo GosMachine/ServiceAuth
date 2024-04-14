@@ -3,7 +3,7 @@ package grpcauth
 import (
 	"context"
 	"errors"
-	"github.com/GosMachine/ServiceAuth/internal/lib/validator"
+	"github.com/GosMachine/ServiceAuth/internal/pkg/validator"
 	auth "github.com/GosMachine/ServiceAuth/internal/services"
 	"github.com/GosMachine/ServiceAuth/internal/storage"
 	authv1 "github.com/GosMachine/protos/gen/go/auth"

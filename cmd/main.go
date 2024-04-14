@@ -1,19 +1,21 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/GosMachine/ServiceAuth/internal/app"
 	"github.com/GosMachine/ServiceAuth/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
 	cfg := config.MustLoad()
 
-	log := setupLogger(cfg.Env)
+	log := setupLogger()
 	log.Info("starting application", zap.Any("config", cfg))
 
 	application := app.New(log, cfg.GRPC.Port, cfg.TokenTtl)
@@ -29,19 +31,16 @@ func main() {
 	log.Info("application stopped")
 }
 
-func setupLogger(env string) *zap.Logger {
-	level := zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	outputPaths := []string{"stdout"}
-	if env == "prod" {
-		outputPaths = []string{"logs/logfile.txt"}
-		level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	}
+func setupLogger() *zap.Logger {
 	cfg := zap.Config{
 		Encoding:          "json",
 		DisableStacktrace: true,
-		Level:             level,
-		OutputPaths:       outputPaths,
+		Level:             zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		OutputPaths:       []string{"stdout"},
 		EncoderConfig:     zap.NewProductionEncoderConfig(),
+	}
+	cfg.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Format("2006-01-02 15:04:05"))
 	}
 	logger, _ := cfg.Build()
 	defer logger.Sync()

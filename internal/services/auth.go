@@ -1,38 +1,33 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
+	"github.com/GosMachine/ServiceAuth/internal/database/postgres"
 	"github.com/GosMachine/ServiceAuth/internal/domain/models"
-	"github.com/GosMachine/ServiceAuth/internal/storage"
-	"github.com/GosMachine/ServiceAuth/internal/storage/postgres"
-	"github.com/GosMachine/ServiceAuth/pkg/jwt"
+	"github.com/GosMachine/ServiceAuth/internal/pkg/jwt"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
+// var (
+// 	ErrInvalidCredentials = errors.New("invalid credentials")
+// )
 
 type Auth struct {
 	log      *zap.Logger
-	db       Storage
+	db       Database
 	tokenTTL time.Duration
 }
 
-type Storage interface {
-	SaveUser(email, ip string, passHash []byte, emailVerified bool) error
+type Database interface {
+	CreateUser(email, ip string, passHash []byte, emailVerified bool) error
 	User(email string) (models.User, error)
 	UpdateUser(user models.User) error
+	DeleteUser(email string) error
 }
 
-func New(log *zap.Logger,
-	db *postgres.Storage,
-	tokenTTL time.Duration,
-
-) *Auth {
+func New(log *zap.Logger, db *postgres.Database, tokenTTL time.Duration) *Auth {
 	return &Auth{
 		log:      log,
 		db:       db,
@@ -41,10 +36,7 @@ func New(log *zap.Logger,
 }
 
 func (a *Auth) OAuth(email, ip string) (string, error) {
-	const op = "Auth.OAuth"
-
 	log := a.log.With(
-		zap.String("op", op),
 		zap.String("email", email),
 		zap.String("ip", ip),
 	)
@@ -119,7 +111,7 @@ func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 
 // RegisterNewUser registers new user in the system and returns user ID.
 // If user with given username already exists, returns error.
-func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, error) {
+func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 	const op = "Auth.RegisterNewUser"
 
 	log := a.log.With(
@@ -154,3 +146,5 @@ func (a *Auth) RegisterNewUser(email, pass, ip, rememberMe string) (string, erro
 	}(pass, email, ip)
 	return token, nil
 }
+
+func (a *Auth) Delete() {}
