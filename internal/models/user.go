@@ -7,16 +7,11 @@ import (
 
 type User struct {
 	gorm.Model
-	ID            int64  `gorm:"primary_key"`
-	Email         string `gorm:"unique"`
-	EmailVerified bool
-	Balance       float64
+	ID            int    `gorm:"primary_key"`
+	Email         string `gorm:"unique_index"`
+	EmailVerified bool   `gorm:"index"`
 	PassHash      []byte
 	IpCreated     string
 	LastLoginIp   string
 	LastLoginDate time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-}
-
-func (User) Indexes() []string {
-	return []string{"balance"}
 }
