@@ -30,10 +30,10 @@ func RegisterAuthServer(gRPC *grpc.Server, auth Auth) {
 }
 
 func (s *serverAPI) Login(ctx context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
-	if !utils.ValidateAuthData(req.Base.Email, req.Base.Password) {
+	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.Login(req.Base.Email, req.Base.Password, req.Base.IP, req.Base.RememberMe)
+	token, err := s.auth.Login(req.Email, req.Password, req.IP, req.RememberMe)
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
@@ -45,10 +45,10 @@ func (s *serverAPI) Login(ctx context.Context, req *authv1.LoginRequest) (*authv
 }
 
 func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
-	if !utils.ValidateAuthData(req.Base.Email, req.Base.Password) {
+	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.Register(req.Base.Email, req.Base.Password, req.Base.IP, req.Base.RememberMe)
+	token, err := s.auth.Register(req.Email, req.Password, req.IP, req.RememberMe)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
@@ -70,6 +70,9 @@ func (s *serverAPI) OAuth(ctx context.Context, req *authv1.OAuthRequest) (*authv
 func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerifiedRequest) (*authv1.EmailVerifiedResponse, error) {
 	verified, err := s.auth.EmailVerified(req.Email)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	return &authv1.EmailVerifiedResponse{EmailVerified: verified}, nil

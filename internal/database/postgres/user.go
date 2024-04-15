@@ -1,10 +1,12 @@
 package postgres
 
 import (
+	"errors"
 	"time"
 
 	storage "github.com/GosMachine/ServiceAuth/internal/database"
 	"github.com/GosMachine/ServiceAuth/internal/models"
+	"gorm.io/gorm"
 )
 
 func (d *Database) CreateUser(email, ip string, passHash []byte, emailVerified bool) error {
@@ -26,6 +28,9 @@ func (d *Database) User(email string) (models.User, error) {
 func (d *Database) EmailVerified(email string) (bool, error) {
 	var user models.User
 	if err := d.db.Where("email = ?", email).Select("email_verified").First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, storage.ErrUserNotFound
+		}
 		return false, err
 	}
 	return user.EmailVerified, nil
