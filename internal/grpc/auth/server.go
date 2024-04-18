@@ -20,6 +20,7 @@ type Auth interface {
 	EmailVerified(email string) (verified bool, err error)
 	EmailVerify(email string) error
 	Register(email, password, ip, rememberMe string) (token string, err error)
+	ChangePass(email, password, ip string) (token string, err error)
 }
 
 type serverAPI struct {
@@ -67,6 +68,17 @@ func (s *serverAPI) OAuth(ctx context.Context, req *authv1.OAuthRequest) (*authv
 		return nil, status.Error(codes.Internal, "failed to OAuth")
 	}
 	return &authv1.OAuthResponse{Token: token}, nil
+}
+
+func (s *serverAPI) ChangePass(ctx context.Context, req *authv1.ChangePassRequest) (*authv1.ChangePassResponse, error) {
+	if !utils.ValidateAuthData(req.Email, req.Password) {
+		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+	}
+	token, err := s.auth.ChangePass(req.Email, req.Password, req.IP)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to change password")
+	}
+	return &authv1.ChangePassResponse{Token: token}, nil
 }
 
 func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerifiedRequest) (*authv1.EmailVerifiedResponse, error) {

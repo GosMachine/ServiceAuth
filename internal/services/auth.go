@@ -141,6 +141,35 @@ func (a *Auth) EmailVerify(email string) error {
 	return err
 }
 
+func (a *Auth) ChangePass(email, pass, ip string) (string, error) {
+	log := a.log.With(
+		zap.String("email", email),
+		zap.String("ip", ip),
+	)
+	log.Info("password changing")
+	user, err := a.db.User(email)
+	if err != nil {
+		log.Error("failed to get user", zap.Error(err))
+		return "", ErrInvalidCredentials
+	}
+	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
+	if err != nil {
+		log.Error("failed to generate password hash", zap.Error(err))
+		return "", err
+	}
+	user.PassHash = passHash
+	if err = a.updateUser(user, ip); err != nil {
+		log.Error("failed to update user", zap.Error(err))
+		return "", err
+	}
+	token, err := jwt.NewToken(email, "on", a.tokenTTL)
+	if err != nil {
+		log.Error("failed to generate token", zap.Error(err))
+		return "", err
+	}
+	return token, nil
+}
+
 // func (a *Auth) Delete() {}
 
 func (a *Auth) updateUser(user models.User, ip string) error {

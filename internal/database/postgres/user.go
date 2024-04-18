@@ -41,6 +41,7 @@ func (d *Database) EmailVerify(email string) error {
 }
 
 func (d *Database) UpdateUser(user models.User) error {
+	//todo попробовать сделать за один запрос, чтоб не нужно было брать юзера
 	return d.db.Save(&user).Error
 }
 
