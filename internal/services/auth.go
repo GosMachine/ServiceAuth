@@ -24,6 +24,7 @@ type Database interface {
 	User(email string) (models.User, error)
 	UpdateUser(user models.User) error
 	EmailVerified(email string) (bool, error)
+	EmailVerify(email string) error
 	// DeleteUser(email string) error
 }
 
@@ -125,7 +126,19 @@ func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 }
 
 func (a *Auth) EmailVerified(email string) (bool, error) {
-	return a.db.EmailVerified(email)
+	verified, err := a.db.EmailVerified(email)
+	if err != nil {
+		a.log.Error("error email verified check", zap.Error(err))
+	}
+	return verified, err
+}
+
+func (a *Auth) EmailVerify(email string) error {
+	err := a.db.EmailVerify(email)
+	if err != nil {
+		a.log.Error("error email verify", zap.Error(err))
+	}
+	return err
 }
 
 // func (a *Auth) Delete() {}

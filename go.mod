@@ -3,7 +3,7 @@ module github.com/GosMachine/ServiceAuth
 go 1.22
 
 require (
-	github.com/GosMachine/protos v0.3.3
+	github.com/GosMachine/protos v0.3.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.22.0
@@ -34,6 +34,6 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240412170617-26222e5d3d56 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
+	google.golang.org/protobuf v1.33.0
 )

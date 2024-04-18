@@ -11,12 +11,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
 	OAuth(email, ip string) (token string, err error)
 	EmailVerified(email string) (verified bool, err error)
+	EmailVerify(email string) error
 	Register(email, password, ip, rememberMe string) (token string, err error)
 }
 
@@ -76,4 +78,8 @@ func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerified
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	return &authv1.EmailVerifiedResponse{EmailVerified: verified}, nil
+}
+
+func (s *serverAPI) EmailVerify(ctx context.Context, req *authv1.EmailVerifyRequest) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, s.auth.EmailVerify(req.Email)
 }
