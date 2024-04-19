@@ -16,11 +16,13 @@ import (
 
 type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
+	Logout(token string) error
 	OAuth(email, ip string) (token string, err error)
 	EmailVerified(email string) (verified bool, err error)
 	EmailVerify(email string) error
+	ChangeEmail(email, newEmail, oldToken string) (token string, err error)
 	Register(email, password, ip, rememberMe string) (token string, err error)
-	ChangePass(email, password, ip string) (token string, err error)
+	ChangePass(email, password, ip, oldToken string) (token string, err error)
 }
 
 type serverAPI struct {
@@ -45,6 +47,14 @@ func (s *serverAPI) Login(ctx context.Context, req *authv1.LoginRequest) (*authv
 	}
 
 	return &authv1.LoginResponse{Token: token}, nil
+}
+
+func (s *serverAPI) Logout(ctx context.Context, req *authv1.LogoutRequest) (*emptypb.Empty, error) {
+	err := s.auth.Logout(req.Token)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to logout")
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
@@ -74,7 +84,7 @@ func (s *serverAPI) ChangePass(ctx context.Context, req *authv1.ChangePassReques
 	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.ChangePass(req.Email, req.Password, req.IP)
+	token, err := s.auth.ChangePass(req.Email, req.Password, req.IP, req.OldToken)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to change password")
 	}
@@ -92,6 +102,21 @@ func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerified
 	return &authv1.EmailVerifiedResponse{EmailVerified: verified}, nil
 }
 
+func (s *serverAPI) ChangeEmail(ctx context.Context, req *authv1.ChangeEmailRequest) (*authv1.ChangeEmailResponse, error) {
+	token, err := s.auth.ChangeEmail(req.Email, req.NewEmail, req.OldToken)
+	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	return &authv1.ChangeEmailResponse{Token: token}, nil
+}
+
 func (s *serverAPI) EmailVerify(ctx context.Context, req *authv1.EmailVerifyRequest) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.auth.EmailVerify(req.Email)
+	err := s.auth.EmailVerify(req.Email)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "email verify failed")
+	}
+	return &emptypb.Empty{}, nil
 }

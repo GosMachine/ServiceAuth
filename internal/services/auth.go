@@ -2,11 +2,12 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/GosMachine/ServiceAuth/internal/database/postgres"
+	"github.com/GosMachine/ServiceAuth/internal/database/redis"
 	"github.com/GosMachine/ServiceAuth/internal/models"
-	"github.com/GosMachine/ServiceAuth/internal/pkg/jwt"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,9 +15,11 @@ import (
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
 type Auth struct {
-	log      *zap.Logger
-	db       Database
-	tokenTTL time.Duration
+	log                *zap.Logger
+	db                 Database
+	tokenTTL           time.Duration
+	rememberMeTokenTTL time.Duration
+	redis              Redis
 }
 
 type Database interface {
@@ -28,11 +31,19 @@ type Database interface {
 	// DeleteUser(email string) error
 }
 
-func New(log *zap.Logger, db *postgres.Database, tokenTTL time.Duration) *Auth {
+type Redis interface {
+	CreateToken(email string, expiration time.Duration) string
+	GetToken(token string) string
+	DeleteToken(token string) error
+}
+
+func New(log *zap.Logger, db *postgres.Database, redis *redis.Redis, tokenTTL, rememberMeTokenTTL time.Duration) *Auth {
 	return &Auth{
-		log:      log,
-		db:       db,
-		tokenTTL: tokenTTL,
+		log:                log,
+		db:                 db,
+		redis:              redis,
+		tokenTTL:           tokenTTL,
+		rememberMeTokenTTL: rememberMeTokenTTL,
 	}
 }
 
@@ -58,11 +69,10 @@ func (a *Auth) OAuth(email, ip string) (string, error) {
 			return "", err
 		}
 	}
-
-	token, err := jwt.NewToken(email, "on", a.tokenTTL)
-	if err != nil {
+	token := a.createToken(email, "on")
+	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", err
+		return "", fmt.Errorf("failed to generate token")
 	}
 
 	log.Info("OAuth successfully")
@@ -89,11 +99,12 @@ func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 		log.Error("failed to update user", zap.Error(err))
 		return "", err
 	}
-	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
-	if err != nil {
+	token := a.createToken(email, rememberMe)
+	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", err
+		return "", fmt.Errorf("failed to generate token")
 	}
+
 	log.Info("user logged in successfully")
 	return token, nil
 }
@@ -115,65 +126,36 @@ func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 		log.Error("failed to create user", zap.Error(err))
 		return "", err
 	}
-	token, err := jwt.NewToken(email, rememberMe, a.tokenTTL)
-	if err != nil {
+	token := a.createToken(email, rememberMe)
+	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", err
+		return "", fmt.Errorf("failed to generate token")
 	}
 
 	log.Info("user register successfully")
 	return token, nil
 }
 
-func (a *Auth) EmailVerified(email string) (bool, error) {
-	verified, err := a.db.EmailVerified(email)
+func (a *Auth) Logout(token string) error {
+	err := a.redis.DeleteToken(token)
 	if err != nil {
-		a.log.Error("error email verified check", zap.Error(err))
-	}
-	return verified, err
-}
-
-func (a *Auth) EmailVerify(email string) error {
-	err := a.db.EmailVerify(email)
-	if err != nil {
-		a.log.Error("error email verify", zap.Error(err))
+		a.log.Error("error delete token", zap.String("token", token))
 	}
 	return err
 }
 
-func (a *Auth) ChangePass(email, pass, ip string) (string, error) {
-	log := a.log.With(
-		zap.String("email", email),
-		zap.String("ip", ip),
-	)
-	log.Info("password changing")
-	user, err := a.db.User(email)
-	if err != nil {
-		log.Error("failed to get user", zap.Error(err))
-		return "", ErrInvalidCredentials
-	}
-	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
-	if err != nil {
-		log.Error("failed to generate password hash", zap.Error(err))
-		return "", err
-	}
-	user.PassHash = passHash
-	if err = a.updateUser(user, ip); err != nil {
-		log.Error("failed to update user", zap.Error(err))
-		return "", err
-	}
-	token, err := jwt.NewToken(email, "on", a.tokenTTL)
-	if err != nil {
-		log.Error("failed to generate token", zap.Error(err))
-		return "", err
-	}
-	return token, nil
-}
-
-// func (a *Auth) Delete() {}
-
 func (a *Auth) updateUser(user models.User, ip string) error {
 	user.LastLoginDate = time.Now()
-	user.LastLoginIp = ip
+	if ip != "" {
+		user.LastLoginIp = ip
+	}
 	return a.db.UpdateUser(user)
+}
+
+func (a *Auth) createToken(email, rememberMe string) string {
+	tokenTTL := a.tokenTTL
+	if rememberMe == "on" {
+		tokenTTL = a.rememberMeTokenTTL
+	}
+	return a.redis.CreateToken(email, tokenTTL)
 }

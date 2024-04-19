@@ -18,7 +18,7 @@ func main() {
 	log := setupLogger()
 	log.Info("starting application", zap.Any("config", cfg))
 
-	application := app.New(log, cfg.GRPC.Port, cfg.TokenTtl)
+	application := app.New(log, cfg.GRPC.Port, cfg.TokenTtl, cfg.RememberMeTokenTTL)
 
 	go application.GRPCSrv.MustRun()
 

@@ -1,5 +1,6 @@
 env: "prod"
-token_ttl: 24h
+token_ttl: 12h
+remember_me_token_ttl: 168h
 grpc:
   port: 44043
   timeout: 3s
