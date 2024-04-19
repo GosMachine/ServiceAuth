@@ -1,14 +1,6 @@
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8=
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
-github.com/GosMachine/protos v0.3.7 h1:ekH9EmORHrNpDqnx1fLNI6UwI/EsP+qqIOGfyzUFkJk=
-github.com/GosMachine/protos v0.3.7/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
-github.com/GosMachine/protos v0.3.8 h1:WAFfdWrsuEWGghmMuA8Rck8pOznERbxfWcHoLHDMwGo=
-github.com/GosMachine/protos v0.3.8/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
-github.com/GosMachine/protos v0.3.9 h1:4wJutm+vG+QPDBfoVMrynkCYGkcyjdxhFlpquHY6hLI=
-github.com/GosMachine/protos v0.3.9/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
-github.com/GosMachine/protos v0.4.0 h1:zacZpUQ6sprF6YgMU4ZD2wTKTVYL1nJVlVyYspgkSS4=
-github.com/GosMachine/protos v0.4.0/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
 github.com/GosMachine/protos v0.4.1 h1:lVKOJJ6SY7W/jeYKed8H1FWmvwi0eEzfmMF3DtOi/K0=
 github.com/GosMachine/protos v0.4.1/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
