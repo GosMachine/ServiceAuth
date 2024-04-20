@@ -73,7 +73,7 @@ func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, error) {
 		log.Error("failed to update user", zap.Error(err))
 		return "", err
 	}
-	token := a.createToken(email, "on")
+	token := a.createToken(newEmail, "on")
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
 		return "", fmt.Errorf("failed to generate token")

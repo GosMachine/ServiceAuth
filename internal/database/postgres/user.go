@@ -37,7 +37,7 @@ func (d *Database) EmailVerified(email string) (bool, error) {
 }
 
 func (d *Database) EmailVerify(email string) error {
-	return d.db.Where("email = ?", email).Set("email_verified", true).Error
+	return d.db.Model(&models.User{}).Where("email = ?", email).Update("email_verified", true).Error
 }
 
 func (d *Database) UpdateUser(user models.User) error {
