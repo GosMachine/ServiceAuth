@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/GosMachine/ServiceAuth/internal/database/postgres"
-	"github.com/GosMachine/ServiceAuth/internal/database/redis"
 	"github.com/GosMachine/ServiceAuth/internal/models"
+	"github.com/GosMachine/ServiceAuth/internal/storage/database"
+	"github.com/GosMachine/ServiceAuth/internal/storage/redis"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,28 +16,13 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 
 type Auth struct {
 	log                *zap.Logger
-	db                 Database
+	db                 database.Database
 	tokenTTL           time.Duration
 	rememberMeTokenTTL time.Duration
-	redis              Redis
+	redis              redis.Service
 }
 
-type Database interface {
-	CreateUser(email, ip string, passHash []byte, emailVerified bool) error
-	User(email string) (models.User, error)
-	UpdateUser(user models.User) error
-	EmailVerified(email string) (bool, error)
-	EmailVerify(email string) error
-	// DeleteUser(email string) error
-}
-
-type Redis interface {
-	CreateToken(email string, expiration time.Duration) string
-	GetToken(token string) string
-	DeleteToken(token string) error
-}
-
-func New(log *zap.Logger, db *postgres.Database, redis *redis.Redis, tokenTTL, rememberMeTokenTTL time.Duration) *Auth {
+func New(log *zap.Logger, db database.Database, redis redis.Service, tokenTTL, rememberMeTokenTTL time.Duration) *Auth {
 	return &Auth{
 		log:                log,
 		db:                 db,

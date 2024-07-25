@@ -1,7 +1,6 @@
 package grpcapp
 
 import (
-	"fmt"
 	grpcauth "github.com/GosMachine/ServiceAuth/internal/grpc/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -11,16 +10,16 @@ import (
 type App struct {
 	log        *zap.Logger
 	gRPCServer *grpc.Server
-	port       int
+	addr       string
 }
 
-func New(log *zap.Logger, authService grpcauth.Auth, port int) *App {
+func New(log *zap.Logger, authService grpcauth.Auth, addr string) *App {
 	gRPCServer := grpc.NewServer()
 	grpcauth.RegisterAuthServer(gRPCServer, authService)
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,
-		port:       port,
+		addr:       addr,
 	}
 }
 
@@ -31,9 +30,9 @@ func (a *App) MustRun() {
 }
 
 func (a *App) Run() error {
-	log := a.log.With(zap.Int("port", a.port))
+	log := a.log.With(zap.String("addr", a.addr))
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
+	l, err := net.Listen("tcp", a.addr)
 	if err != nil {
 		return err
 	}
@@ -48,6 +47,6 @@ func (a *App) Run() error {
 
 func (a *App) Stop() {
 	const op = "grpcapp.Stop"
-	a.log.With(zap.String("op", op)).Info("stopping gRPC server", zap.Int("Port", a.port))
+	a.log.With(zap.String("op", op)).Info("stopping gRPC server", zap.String("addr", a.addr))
 	a.gRPCServer.GracefulStop()
 }

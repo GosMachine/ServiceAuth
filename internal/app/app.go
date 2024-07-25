@@ -1,12 +1,13 @@
 package app
 
 import (
+	"os"
 	"time"
 
 	grpcapp "github.com/GosMachine/ServiceAuth/internal/app/grpc"
-	"github.com/GosMachine/ServiceAuth/internal/database/postgres"
-	"github.com/GosMachine/ServiceAuth/internal/database/redis"
 	auth "github.com/GosMachine/ServiceAuth/internal/services"
+	"github.com/GosMachine/ServiceAuth/internal/storage/database"
+	"github.com/GosMachine/ServiceAuth/internal/storage/redis"
 	"go.uber.org/zap"
 )
 
@@ -14,14 +15,14 @@ type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-func New(log *zap.Logger, grpcPort int, tokenTTL, RememberMeTokenTTL time.Duration) *App {
-	db, err := postgres.New()
+func New(log *zap.Logger, tokenTTL, RememberMeTokenTTL time.Duration) *App {
+	db, err := database.New()
 	if err != nil {
 		panic(err)
 	}
-	redis := redis.New()
+	redis := redis.New(db, log)
 	authService := auth.New(log, db, redis, tokenTTL, RememberMeTokenTTL)
-	grpcApp := grpcapp.New(log, authService, grpcPort)
+	grpcApp := grpcapp.New(log, authService, os.Getenv("AUTH_SERVICE_ADDR"))
 	return &App{
 		GRPCSrv: grpcApp,
 	}

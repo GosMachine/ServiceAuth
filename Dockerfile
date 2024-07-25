@@ -1,16 +1,23 @@
-FROM golang:1.22-alpine AS build
+FROM golang:1.22-alpine AS go-builder
 
-WORKDIR /build
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
-COPY ./configs/prod.yaml /build/prod.yaml
-RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-s -w -extldflags '-static'" -o ./app cmd/main.go
-RUN apk add upx
-RUN upx ./app
+RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-s -w -extldflags '-static'" -o ./main cmd/main.go
 
-FROM scratch
-COPY --from=build /build/app /app
-COPY --from=build /build/prod.yaml /configs/prod.yaml
+FROM alpine:latest
 
-ENTRYPOINT ["/app"]
+WORKDIR /app
 
-# docker build -t gosmach1ne/serviceauth .
+RUN apk --no-cache add ca-certificates
+
+COPY config/prod.yaml /app/config/prod.yaml
+
+COPY --from=go-builder /app/main .
+
+ENV CONFIG_PATH=./config/prod.yaml
+
+CMD ["./main"]

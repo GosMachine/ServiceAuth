@@ -8,6 +8,7 @@ import (
 
 	"github.com/GosMachine/ServiceAuth/internal/app"
 	"github.com/GosMachine/ServiceAuth/internal/config"
+	_ "github.com/joho/godotenv/autoload"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -18,7 +19,7 @@ func main() {
 	log := setupLogger()
 	log.Info("starting application", zap.Any("config", cfg))
 
-	application := app.New(log, cfg.GRPC.Port, cfg.TokenTtl, cfg.RememberMeTokenTTL)
+	application := app.New(log, cfg.TokenTtl, cfg.RememberMeTokenTTL)
 
 	go application.GRPCSrv.MustRun()
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	storage "github.com/GosMachine/ServiceAuth/internal/database"
 	auth "github.com/GosMachine/ServiceAuth/internal/services"
+	"github.com/GosMachine/ServiceAuth/internal/storage"
 	"github.com/GosMachine/ServiceAuth/internal/utils"
 	authv1 "github.com/GosMachine/protos/gen/go/auth"
 	"google.golang.org/grpc"
