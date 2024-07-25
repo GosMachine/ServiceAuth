@@ -8,7 +8,7 @@ import (
 )
 
 func (a *Auth) EmailVerified(email string) (bool, error) {
-	verified, err := a.db.EmailVerified(email)
+	verified, err := a.redis.GetEmailVerifiedCache(email)
 	if err != nil {
 		a.log.Error("error email verified check", zap.Error(err))
 	}

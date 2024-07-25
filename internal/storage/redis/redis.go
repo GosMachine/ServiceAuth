@@ -20,6 +20,7 @@ type Service interface {
 	DeleteToken(token string) error
 	SetEmailVerifiedCache(email string, verified bool) error
 	GetEmailVerifiedCache(email string) (bool, error)
+	GetTokenTTL(token string) time.Duration
 }
 
 func New(db database.Database, log *zap.Logger) Service {
