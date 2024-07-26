@@ -18,9 +18,15 @@ func (a *Auth) EmailVerified(email string) (bool, error) {
 func (a *Auth) EmailVerify(email string) error {
 	err := a.db.EmailVerify(email)
 	if err != nil {
-		a.log.Error("error email verify", zap.Error(err))
+		a.log.Error("error email verify", zap.Error(err), zap.String("email", email))
+		return err
 	}
-	return err
+	err = a.redis.SetEmailVerifiedCache(email, true)
+	if err != nil {
+		a.log.Error("error set email verified", zap.Error(err), zap.String("email", email))
+		return err
+	}
+	return nil
 }
 
 func (a *Auth) ChangePass(email, pass, ip, oldToken string) (string, error) {
@@ -81,6 +87,11 @@ func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, error) {
 	err = a.redis.DeleteToken(oldToken)
 	if err != nil {
 		log.Error("error delete token", zap.Error(err))
+	}
+
+	err = a.redis.Delete("emailVerified:" + email)
+	if err != nil {
+		log.Error("error delete email verified", zap.Error(err))
 	}
 
 	return token, nil

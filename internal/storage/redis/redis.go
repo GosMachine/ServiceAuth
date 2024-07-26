@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -21,6 +22,11 @@ type Service interface {
 	SetEmailVerifiedCache(email string, verified bool) error
 	GetEmailVerifiedCache(email string) (bool, error)
 	GetTokenTTL(token string) time.Duration
+	Delete(values ...string) error
+}
+
+func (r *Redis) Delete(keys ...string) error {
+	return r.client.Del(context.Background(), keys...).Err()
 }
 
 func New(db database.Database, log *zap.Logger) Service {
