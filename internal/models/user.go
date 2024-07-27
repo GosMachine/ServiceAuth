@@ -8,7 +8,7 @@ import (
 type User struct {
 	gorm.Model
 	ID            int    `gorm:"primary_key"`
-	Email         string `gorm:"unique_index"`
+	Email         string `gorm:"unique"`
 	EmailVerified bool   `gorm:"index"`
 	PassHash      []byte
 	IpCreated     string

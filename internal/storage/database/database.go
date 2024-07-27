@@ -27,7 +27,7 @@ func New() (Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.AutoMigrate(models.User{})
+	err = db.AutoMigrate(&models.User{})
 	if err != nil {
 		return nil, err
 	}

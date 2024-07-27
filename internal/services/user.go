@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -13,6 +14,18 @@ func (a *Auth) EmailVerified(email string) (bool, error) {
 		a.log.Error("error email verified check", zap.Error(err))
 	}
 	return verified, err
+}
+
+func (a *Auth) GetTokenTTL(token string) time.Duration {
+	tokenTTL := a.redis.GetTokenTTL(token)
+	a.log.Info("token ttl successfully taken", zap.String("token", token), zap.Duration("tokenTTL", tokenTTL))
+	return tokenTTL
+}
+
+func (a *Auth) GetUserEmail(token string) string {
+	email := a.redis.GetEmail(token)
+	a.log.Info("user email successfully taken", zap.String("token", token), zap.String("email", email))
+	return email
 }
 
 func (a *Auth) EmailVerify(email string) error {

@@ -3,6 +3,7 @@ package grpcauth
 import (
 	"context"
 	"errors"
+	"time"
 
 	auth "github.com/GosMachine/ServiceAuth/internal/services"
 	"github.com/GosMachine/ServiceAuth/internal/storage"
@@ -18,6 +19,8 @@ type Auth interface {
 	Login(email, password, ip, rememberMe string) (token string, err error)
 	Logout(token string) error
 	OAuth(email, ip string) (token string, err error)
+	GetTokenTTL(token string) time.Duration
+	GetUserEmail(token string) string
 	EmailVerified(email string) (verified bool, err error)
 	EmailVerify(email string) error
 	ChangeEmail(email, newEmail, oldToken string) (token string, err error)
@@ -119,4 +122,14 @@ func (s *serverAPI) EmailVerify(ctx context.Context, req *authv1.EmailVerifyRequ
 		return nil, status.Error(codes.Internal, "email verify failed")
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func (s *serverAPI) GetTokenTTL(ctx context.Context, req *authv1.GetTokenTTLRequest) (*authv1.GetTokenTTLResponse, error) {
+	tokenTTL := s.auth.GetTokenTTL(req.Token)
+	return &authv1.GetTokenTTLResponse{TokenTTL: int64(tokenTTL.Minutes())}, nil
+}
+
+func (s *serverAPI) GetUserEmail(ctx context.Context, req *authv1.GetUserEmailRequest) (*authv1.GetUserEmailResponse, error) {
+	email := s.auth.GetUserEmail(req.Token)
+	return &authv1.GetUserEmailResponse{Email: email}, nil
 }

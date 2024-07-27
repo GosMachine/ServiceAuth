@@ -7,6 +7,8 @@ github.com/GosMachine/protos v0.4.1 h1:lVKOJJ6SY7W/jeYKed8H1FWmvwi0eEzfmMF3DtOi/
 github.com/GosMachine/protos v0.4.1/go.mod h1:+mla3B0n5059WkFvVAXKPSCs8rAAHW4nDkH0ur3BwGk=
 github.com/GosMachine/protos v0.9.5 h1:I2EcvNIQbXwU2WA1ZJ1bgOL2vsHlUgXkVcCVm6LzMe8=
 github.com/GosMachine/protos v0.9.5/go.mod h1:GGlwldf+ADA5sp/6O60N5uH4hDTHUek4UhzWS9sBFa8=
+github.com/GosMachine/protos v0.9.9 h1:ZLMwn8RPLjHtJNpgeW7/i5hViJTf1jXQskA3Hx5Uoxo=
+github.com/GosMachine/protos v0.9.9/go.mod h1:GGlwldf+ADA5sp/6O60N5uH4hDTHUek4UhzWS9sBFa8=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=

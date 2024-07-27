@@ -3,7 +3,7 @@ module github.com/GosMachine/ServiceAuth
 go 1.22.5
 
 require (
-	github.com/GosMachine/protos v0.9.5
+	github.com/GosMachine/protos v0.9.9
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.6.1
 	go.uber.org/zap v1.27.0
