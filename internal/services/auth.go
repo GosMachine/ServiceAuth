@@ -33,7 +33,7 @@ func New(log *zap.Logger, db database.Database, redis redis.Service, tokenTTL, r
 }
 
 // oauth for google, github, etc.
-func (a *Auth) OAuth(email, ip string) (string, error) {
+func (a *Auth) OAuth(email, ip string) (string, time.Duration, error) {
 	log := a.log.With(
 		zap.String("email", email),
 		zap.String("ip", ip),
@@ -45,26 +45,26 @@ func (a *Auth) OAuth(email, ip string) (string, error) {
 		err = a.db.CreateUser(email, ip, []byte{}, true)
 		if err != nil {
 			log.Error("failed to create user", zap.Error(err))
-			return "", err
+			return "", 0, err
 		}
 	} else {
 		user.EmailVerified = true
 		if err = a.updateUser(user, ip); err != nil {
 			log.Error("failed to update user", zap.Error(err))
-			return "", err
+			return "", 0, err
 		}
 	}
-	token := a.createToken(email, "on")
+	token, tokenTTL := a.createToken(email, "on")
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", fmt.Errorf("failed to generate token")
+		return "", 0, fmt.Errorf("failed to generate token")
 	}
 
 	log.Info("OAuth successfully")
-	return token, nil
+	return token, tokenTTL, nil
 }
 
-func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
+func (a *Auth) Login(email, password, ip, rememberMe string) (string, time.Duration, error) {
 	log := a.log.With(
 		zap.String("email", email),
 		zap.String("ip", ip),
@@ -74,27 +74,27 @@ func (a *Auth) Login(email, password, ip, rememberMe string) (string, error) {
 	user, err := a.db.User(email)
 	if err != nil {
 		log.Error("failed to get user", zap.Error(err))
-		return "", ErrInvalidCredentials
+		return "", 0, ErrInvalidCredentials
 	}
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		log.Info("passwords do not match", zap.Error(err))
-		return "", ErrInvalidCredentials
+		return "", 0, ErrInvalidCredentials
 	}
 	if err = a.updateUser(user, ip); err != nil {
 		log.Error("failed to update user", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
-	token := a.createToken(email, rememberMe)
+	token, tokenTTL := a.createToken(email, rememberMe)
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", fmt.Errorf("failed to generate token")
+		return "", 0, fmt.Errorf("failed to generate token")
 	}
 
 	log.Info("user logged in successfully")
-	return token, nil
+	return token, tokenTTL, nil
 }
 
-func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
+func (a *Auth) Register(email, pass, ip, rememberMe string) (string, time.Duration, error) {
 	log := a.log.With(
 		zap.String("email", email),
 		zap.String("ip", ip),
@@ -104,21 +104,21 @@ func (a *Auth) Register(email, pass, ip, rememberMe string) (string, error) {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
 	if err != nil {
 		log.Error("failed to generate password hash", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
 	err = a.db.CreateUser(email, ip, passHash, false)
 	if err != nil {
 		log.Error("failed to create user", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
-	token := a.createToken(email, rememberMe)
+	token, tokenTTL := a.createToken(email, rememberMe)
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", fmt.Errorf("failed to generate token")
+		return "", 0, fmt.Errorf("failed to generate token")
 	}
 
 	log.Info("user register successfully")
-	return token, nil
+	return token, tokenTTL, nil
 }
 
 func (a *Auth) Logout(token string) error {
@@ -137,10 +137,10 @@ func (a *Auth) updateUser(user models.User, ip string) error {
 	return a.db.UpdateUser(user)
 }
 
-func (a *Auth) createToken(email, rememberMe string) string {
+func (a *Auth) createToken(email, rememberMe string) (string, time.Duration) {
 	tokenTTL := a.tokenTTL
 	if rememberMe == "on" {
 		tokenTTL = a.rememberMeTokenTTL
 	}
-	return a.redis.CreateToken(email, tokenTTL)
+	return a.redis.CreateToken(email, tokenTTL), tokenTTL
 }

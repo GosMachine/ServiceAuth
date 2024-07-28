@@ -16,16 +16,16 @@ import (
 )
 
 type Auth interface {
-	Login(email, password, ip, rememberMe string) (token string, err error)
+	Login(email, password, ip, rememberMe string) (token string, tokenTTL time.Duration, err error)
 	Logout(token string) error
-	OAuth(email, ip string) (token string, err error)
-	GetTokenTTL(token string) time.Duration
+	OAuth(email, ip string) (token string, tokenTTL time.Duration, err error)
+	CreateToken(email, remember string) (string, time.Duration)
 	GetUserEmail(token string) string
 	EmailVerified(email string) (verified bool, err error)
 	EmailVerify(email string) error
-	ChangeEmail(email, newEmail, oldToken string) (token string, err error)
-	Register(email, password, ip, rememberMe string) (token string, err error)
-	ChangePass(email, password, ip, oldToken string) (token string, err error)
+	ChangeEmail(email, newEmail, oldToken string) (token string, tokenTTL time.Duration, err error)
+	Register(email, password, ip, rememberMe string) (token string, tokenTTL time.Duration, err error)
+	ChangePass(email, password, ip, oldToken string) (token string, tokenTTL time.Duration, err error)
 }
 
 type serverAPI struct {
@@ -41,7 +41,7 @@ func (s *serverAPI) Login(ctx context.Context, req *authv1.LoginRequest) (*authv
 	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.Login(req.Email, req.Password, req.IP, req.RememberMe)
+	token, tokenTTL, err := s.auth.Login(req.Email, req.Password, req.IP, req.RememberMe)
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
@@ -49,7 +49,7 @@ func (s *serverAPI) Login(ctx context.Context, req *authv1.LoginRequest) (*authv
 		return nil, status.Error(codes.Internal, "failed to login")
 	}
 
-	return &authv1.LoginResponse{Token: token}, nil
+	return &authv1.LoginResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) Logout(ctx context.Context, req *authv1.LogoutRequest) (*emptypb.Empty, error) {
@@ -64,7 +64,7 @@ func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest) (
 	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.Register(req.Email, req.Password, req.IP, req.RememberMe)
+	token, tokenTTL, err := s.auth.Register(req.Email, req.Password, req.IP, req.RememberMe)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
@@ -72,26 +72,26 @@ func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest) (
 
 		return nil, status.Error(codes.Internal, "failed to register user")
 	}
-	return &authv1.RegisterResponse{Token: token}, nil
+	return &authv1.RegisterResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) OAuth(ctx context.Context, req *authv1.OAuthRequest) (*authv1.OAuthResponse, error) {
-	token, err := s.auth.OAuth(req.Email, req.IP)
+	token, tokenTTL, err := s.auth.OAuth(req.Email, req.IP)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to OAuth")
 	}
-	return &authv1.OAuthResponse{Token: token}, nil
+	return &authv1.OAuthResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) ChangePass(ctx context.Context, req *authv1.ChangePassRequest) (*authv1.ChangePassResponse, error) {
 	if !utils.ValidateAuthData(req.Email, req.Password) {
 		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
 	}
-	token, err := s.auth.ChangePass(req.Email, req.Password, req.IP, req.OldToken)
+	token, tokenTTL, err := s.auth.ChangePass(req.Email, req.Password, req.IP, req.OldToken)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to change password")
 	}
-	return &authv1.ChangePassResponse{Token: token}, nil
+	return &authv1.ChangePassResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerifiedRequest) (*authv1.EmailVerifiedResponse, error) {
@@ -106,14 +106,14 @@ func (s *serverAPI) EmailVerified(ctx context.Context, req *authv1.EmailVerified
 }
 
 func (s *serverAPI) ChangeEmail(ctx context.Context, req *authv1.ChangeEmailRequest) (*authv1.ChangeEmailResponse, error) {
-	token, err := s.auth.ChangeEmail(req.Email, req.NewEmail, req.OldToken)
+	token, tokenTTL, err := s.auth.ChangeEmail(req.Email, req.NewEmail, req.OldToken)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
-	return &authv1.ChangeEmailResponse{Token: token}, nil
+	return &authv1.ChangeEmailResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) EmailVerify(ctx context.Context, req *authv1.EmailVerifyRequest) (*emptypb.Empty, error) {
@@ -124,9 +124,9 @@ func (s *serverAPI) EmailVerify(ctx context.Context, req *authv1.EmailVerifyRequ
 	return &emptypb.Empty{}, nil
 }
 
-func (s *serverAPI) GetTokenTTL(ctx context.Context, req *authv1.GetTokenTTLRequest) (*authv1.GetTokenTTLResponse, error) {
-	tokenTTL := s.auth.GetTokenTTL(req.Token)
-	return &authv1.GetTokenTTLResponse{TokenTTL: int64(tokenTTL.Minutes())}, nil
+func (s *serverAPI) CreateToken(ctx context.Context, req *authv1.CreateTokenRequest) (*authv1.CreateTokenResponse, error) {
+	token, tokenTTL := s.auth.CreateToken(req.Email, req.Remember)
+	return &authv1.CreateTokenResponse{Token: token, TokenTTL: int64(tokenTTL.Minutes())}, nil
 }
 
 func (s *serverAPI) GetUserEmail(ctx context.Context, req *authv1.GetUserEmailRequest) (*authv1.GetUserEmailResponse, error) {

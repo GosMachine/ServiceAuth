@@ -16,13 +16,16 @@ func (a *Auth) EmailVerified(email string) (bool, error) {
 	return verified, err
 }
 
-func (a *Auth) GetTokenTTL(token string) time.Duration {
-	tokenTTL := a.redis.GetTokenTTL(token)
+func (a *Auth) CreateToken(email, remember string) (string, time.Duration) {
+	token, tokenTTL := a.createToken(email, remember)
 	a.log.Info("token ttl successfully taken", zap.String("token", token), zap.Duration("tokenTTL", tokenTTL))
-	return tokenTTL
+	return token, tokenTTL
 }
 
 func (a *Auth) GetUserEmail(token string) string {
+	if token == "" {
+		return ""
+	}
 	email := a.redis.GetEmail(token)
 	a.log.Info("user email successfully taken", zap.String("token", token), zap.String("email", email))
 	return email
@@ -42,7 +45,7 @@ func (a *Auth) EmailVerify(email string) error {
 	return nil
 }
 
-func (a *Auth) ChangePass(email, pass, ip, oldToken string) (string, error) {
+func (a *Auth) ChangePass(email, pass, ip, oldToken string) (string, time.Duration, error) {
 	log := a.log.With(
 		zap.String("email", email),
 		zap.String("ip", ip),
@@ -51,32 +54,32 @@ func (a *Auth) ChangePass(email, pass, ip, oldToken string) (string, error) {
 	user, err := a.db.User(email)
 	if err != nil {
 		log.Error("failed to get user", zap.Error(err))
-		return "", ErrInvalidCredentials
+		return "", 0, ErrInvalidCredentials
 	}
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.MinCost)
 	if err != nil {
 		log.Error("failed to generate password hash", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
 	user.PassHash = passHash
 	if err = a.updateUser(user, ip); err != nil {
 		log.Error("failed to update user", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
-	token := a.createToken(email, "on")
+	token, tokenTTL := a.createToken(email, "on")
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", fmt.Errorf("failed to generate token")
+		return "", 0, fmt.Errorf("failed to generate token")
 	}
 	err = a.redis.DeleteToken(oldToken)
 	if err != nil {
 		log.Error("error delete token", zap.Error(err))
 	}
 
-	return token, nil
+	return token, tokenTTL, nil
 }
 
-func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, error) {
+func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, time.Duration, error) {
 	log := a.log.With(
 		zap.String("email", email),
 		zap.String("newEmail", newEmail),
@@ -85,17 +88,17 @@ func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, error) {
 	user, err := a.db.User(email)
 	if err != nil {
 		log.Error("failed to get user", zap.Error(err))
-		return "", ErrInvalidCredentials
+		return "", 0, ErrInvalidCredentials
 	}
 	user.Email = newEmail
 	if err = a.updateUser(user, ""); err != nil {
 		log.Error("failed to update user", zap.Error(err))
-		return "", err
+		return "", 0, err
 	}
-	token := a.createToken(newEmail, "on")
+	token, tokenTTL := a.createToken(newEmail, "on")
 	if token == "" {
 		log.Error("failed to generate token", zap.Error(err))
-		return "", fmt.Errorf("failed to generate token")
+		return "", 0, fmt.Errorf("failed to generate token")
 	}
 	err = a.redis.DeleteToken(oldToken)
 	if err != nil {
@@ -107,7 +110,7 @@ func (a *Auth) ChangeEmail(email, newEmail, oldToken string) (string, error) {
 		log.Error("error delete email verified", zap.Error(err))
 	}
 
-	return token, nil
+	return token, tokenTTL, nil
 }
 
 // func (a *Auth) Delete() {}
