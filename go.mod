@@ -1,6 +1,6 @@
 module github.com/GosMachine/ServiceAuth
 
-go 1.22.5
+go 1.23.1
 
 require (
 	github.com/GosMachine/protos v0.9.16
